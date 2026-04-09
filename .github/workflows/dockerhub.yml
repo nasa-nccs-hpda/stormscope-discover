@@ -39,4 +39,4 @@ jobs:
           file: ./requirements/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: nasanccs/stormscope-discover:latest
+          tags: jli30/stormscope-discover:latest
