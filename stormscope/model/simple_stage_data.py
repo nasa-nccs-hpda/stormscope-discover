@@ -1,0 +1,37 @@
+import numpy as np
+from datetime import datetime
+
+from earth2studio.data import GOES, MRMS, GFS_FX, datasource_to_file, DataArrayFile
+from earth2studio.models.px.stormscope import StormScopeBase, StormScopeGOES, StormScopeMRMS
+
+init_time = [np.datetime64("2023-12-05T12:00:00")]
+device = "cuda"
+
+goes_model_name = "6km_60min_natten_cos_zenith_input_eoe_v2"
+mrms_model_name = "6km_60min_natten_cos_zenith_input_mrms_eoe"
+
+pkg = StormScopeBase.load_default_package()
+goes_model = StormScopeGOES.load_model(pkg, model_name=goes_model_name, conditioning_data_source=GFS_FX())
+mrms_model = StormScopeMRMS.load_model(pkg, model_name=mrms_model_name, conditioning_data_source=GOES())
+
+goes_vars = np.array(goes_model.input_coords()["variable"])
+goes_leads = goes_model.input_coords()["lead_time"]
+
+mrms_vars = np.array(["refc"])
+mrms_leads = mrms_model.input_coords()["lead_time"]
+
+gfs_vars = np.array(goes_model.conditioning_variables)   # e.g. z500 for this model
+gfs_leads = goes_model.input_coords()["lead_time"]
+
+datasource_to_file("/data/goes_input.nc", GOES(satellite="goes16", scan_mode="C"),
+                   time=init_time, variable=goes_vars, lead_time=goes_leads, backend="netcdf")
+datasource_to_file("/data/mrms_input.nc", MRMS(),
+                   time=init_time, variable=mrms_vars, lead_time=mrms_leads, backend="netcdf")
+datasource_to_file("/data/gfs_conditioning.nc", GFS_FX(),
+                   time=init_time, variable=gfs_vars, lead_time=gfs_leads, backend="netcdf")
+
+# In offline HPC inference:
+# goes_local = DataArrayFile("/data/goes_input.nc")
+# mrms_local = DataArrayFile("/data/mrms_input.nc")
+# gfs_local  = DataArrayFile("/data/gfs_conditioning.nc")
+# Then pass these as model data sources instead of GOES/MRMS/GFS_FX cloud sources.
