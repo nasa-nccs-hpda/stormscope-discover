@@ -1,6 +1,9 @@
 name: CI Regression
 
-on: [push, pull_request]
+on:
+  push:
+      tags:
+        - 'v*' # Triggers on any tag starting with 'v' (e.g., v1.2, v2.0-beta)
 
 jobs:
 
