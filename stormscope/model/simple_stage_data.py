@@ -1,11 +1,30 @@
 import numpy as np
 from datetime import datetime
+import torch
 
 from earth2studio.data import GOES, MRMS, GFS_FX, datasource_to_file, DataArrayFile
 from earth2studio.models.px.stormscope import StormScopeBase, StormScopeGOES, StormScopeMRMS
 from earth2studio.models.auto import Package
 init_time = [np.datetime64("2023-12-05T12:00:00")]
 #device = "cpu"
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+goes_model_name = "6km_60min_natten_cos_zenith_input_eoe_v2"
+mrms_model_name = "6km_60min_natten_cos_zenith_input_mrms_eoe"
+
+package = StormScopeBase.load_default_package()
+
+# Load GOES model with GFS_FX conditioning (should be set to None for 10min models)
+model = StormScopeGOES.load_model(
+    package=package,
+    conditioning_data_source=GFS_FX(),
+    model_name=goes_model_name,
+)
+model = model.to(device)
+model.eval()
+print("✓ GOES model loaded and moved to device:", device)
+exit()
 
 goes_model_name = "6km_60min_natten_cos_zenith_input_eoe_v2"
 mrms_model_name = "6km_60min_natten_cos_zenith_input_mrms_eoe"
