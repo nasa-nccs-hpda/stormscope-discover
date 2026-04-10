@@ -15,8 +15,20 @@ mrms_model_name = "6km_60min_natten_cos_zenith_input_mrms_eoe"
 pkg_path = "/stormscope/stormscope-goes-mrms"
 pkg = Package(pkg_path)
 print("✓ Package loaded successfully")
-exit()
-goes_model = StormScopeGOES.load_model(pkg, model_name=goes_model_name, conditioning_data_source=GFS_FX())
+
+try:
+    print(f"\nLoading GOES model: {goes_model_name}")
+    goes_model = StormScopeGOES.load_model(
+        pkg, 
+        model_name=goes_model_name, 
+        conditioning_data_source=GFS_FX()
+    )
+    print("✓ GOES model loaded")
+    
+except Exception as e:
+    print(f"✗ Failed to load GOES model")
+    print(f"Error: {e}")
+
 mrms_model = StormScopeMRMS.load_model(pkg, model_name=mrms_model_name, conditioning_data_source=GOES())
 print("GOES model input variables:", goes_model.input_coords()["variable"])
 print("MRMS model input variables:", mrms_model.input_coords()["variable"])
