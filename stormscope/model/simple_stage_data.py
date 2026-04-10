@@ -3,17 +3,22 @@ from datetime import datetime
 
 from earth2studio.data import GOES, MRMS, GFS_FX, datasource_to_file, DataArrayFile
 from earth2studio.models.px.stormscope import StormScopeBase, StormScopeGOES, StormScopeMRMS
-
+from earth2studio.models.auto import Package
 init_time = [np.datetime64("2023-12-05T12:00:00")]
 device = "cuda"
 
 goes_model_name = "6km_60min_natten_cos_zenith_input_eoe_v2"
 mrms_model_name = "6km_60min_natten_cos_zenith_input_mrms_eoe"
 
-pkg = StormScopeBase.load_default_package()
+#pkg = StormScopeBase.load_default_package()
+# Load the package from local disk
+pkg_path = "/stormscop/stormscope-goes-mrms"
+pkg = Package(pkg_path)
 goes_model = StormScopeGOES.load_model(pkg, model_name=goes_model_name, conditioning_data_source=GFS_FX())
 mrms_model = StormScopeMRMS.load_model(pkg, model_name=mrms_model_name, conditioning_data_source=GOES())
-
+print("GOES model input variables:", goes_model.input_coords()["variable"])
+print("MRMS model input variables:", mrms_model.input_coords()["variable"])
+exit()
 goes_vars = np.array(goes_model.input_coords()["variable"])
 goes_leads = goes_model.input_coords()["lead_time"]
 
