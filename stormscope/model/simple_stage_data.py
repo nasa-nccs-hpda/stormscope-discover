@@ -13,28 +13,13 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 goes_model_name = "6km_60min_natten_cos_zenith_input_eoe_v2"
 mrms_model_name = "6km_60min_natten_cos_zenith_input_mrms_eoe"
 
-package = StormScopeBase.load_default_package()
-
-# Load GOES model with GFS_FX conditioning (should be set to None for 10min models)
-model = StormScopeGOES.load_model(
-    package=package,
-    conditioning_data_source=GFS_FX(),
-    model_name=goes_model_name,
-)
-model = model.to(device)
-model.eval()
-print("✓ GOES model loaded and moved to device:", device)
-exit()
-
-goes_model_name = "6km_60min_natten_cos_zenith_input_eoe_v2"
-mrms_model_name = "6km_60min_natten_cos_zenith_input_mrms_eoe"
-
 #pkg = StormScopeBase.load_default_package()
 # Load the package from local disk
 pkg_path = "/stormscope/stormscope-goes-mrms"
 pkg = Package(pkg_path)
 print("✓ Package loaded successfully")
-
+print(pkg)
+exit()
 try:
     print(f"\nLoading GOES model: {goes_model_name}")
     goes_model = StormScopeGOES.load_model(
