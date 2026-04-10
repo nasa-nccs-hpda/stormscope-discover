@@ -12,7 +12,7 @@ mrms_model_name = "6km_60min_natten_cos_zenith_input_mrms_eoe"
 
 #pkg = StormScopeBase.load_default_package()
 # Load the package from local disk
-pkg_path = "/stormscope/stormscope-goes-mrms"e
+pkg_path = "/stormscope/stormscope-goes-mrms"
 pkg = Package(pkg_path)
 goes_model = StormScopeGOES.load_model(pkg, model_name=goes_model_name, conditioning_data_source=GFS_FX())
 mrms_model = StormScopeMRMS.load_model(pkg, model_name=mrms_model_name, conditioning_data_source=GOES())
