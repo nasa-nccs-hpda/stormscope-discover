@@ -10,7 +10,7 @@ init_time = [np.datetime64("2023-12-05T12:00:00")]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-goes_model_name = "6km_60min_natten_cos_zenith_input_eoe_v2"
+goes_model_name = "6km_10min_natten_pure_obs_zenith_6steps"
 mrms_model_name = "6km_60min_natten_cos_zenith_input_mrms_eoe"
 
 #pkg = StormScopeBase.load_default_package()
