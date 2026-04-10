@@ -18,14 +18,12 @@ mrms_model_name = "6km_60min_natten_cos_zenith_input_mrms_eoe"
 pkg_path = "/stormscope/stormscope-goes-mrms"
 pkg = Package(pkg_path)
 print("✓ Package loaded successfully")
-print(pkg)
-exit()
 try:
     print(f"\nLoading GOES model: {goes_model_name}")
     goes_model = StormScopeGOES.load_model(
         pkg, 
         model_name=goes_model_name, 
-        conditioning_data_source=GFS_FX()
+        conditioning_data_source=None,
     )
     print("✓ GOES model loaded")
     
