@@ -1,6 +1,9 @@
 name: Code style - PEP8
 
-on: [push, pull_request]
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*' # Triggers on semantic version tags like v1.0.0
 
 jobs:
 
