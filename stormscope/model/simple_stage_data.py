@@ -5,7 +5,7 @@ from earth2studio.data import GOES, MRMS, GFS_FX, datasource_to_file, DataArrayF
 from earth2studio.models.px.stormscope import StormScopeBase, StormScopeGOES, StormScopeMRMS
 from earth2studio.models.auto import Package
 init_time = [np.datetime64("2023-12-05T12:00:00")]
-device = "cuda"
+device = "cpu"
 
 goes_model_name = "6km_60min_natten_cos_zenith_input_eoe_v2"
 mrms_model_name = "6km_60min_natten_cos_zenith_input_mrms_eoe"
