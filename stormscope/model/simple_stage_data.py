@@ -23,7 +23,7 @@ try:
     goes_model = StormScopeGOES.load_model(
         pkg, 
         model_name=goes_model_name, 
-        conditioning_data_source=None,
+        conditioning_data_source=GFS_FX(),
     )
     print("✓ GOES model loaded")
     
@@ -31,10 +31,21 @@ except Exception as e:
     print(f"✗ Failed to load GOES model")
     print(f"Error: {e}")
 
-mrms_model = StormScopeMRMS.load_model(pkg, model_name=mrms_model_name, conditioning_data_source=GOES())
+try:
+    print(f"\nLoading MRMS model: {mrms_model_name}")
+    mrms_model = StormScopeMRMS.load_model(
+        pkg, 
+        model_name=mrms_model_name, 
+        conditioning_data_source=GOES(),
+    )
+    print("✓ MRMS model loaded")
+except Exception as e:
+    print(f"✗ Failed to load MRMS model")
+    print(f"Error: {e}")
+    
 print("GOES model input variables:", goes_model.input_coords()["variable"])
 print("MRMS model input variables:", mrms_model.input_coords()["variable"])
-exit()
+
 goes_vars = np.array(goes_model.input_coords()["variable"])
 goes_leads = goes_model.input_coords()["lead_time"]
 
