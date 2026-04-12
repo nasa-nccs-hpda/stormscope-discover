@@ -44,11 +44,11 @@ mrms_leads = mrms_model.input_coords()["lead_time"]
 gfs_vars = np.array(goes_model.conditioning_variables)   # e.g. z500 for this model
 gfs_leads = goes_model.input_coords()["lead_time"]
 
-datasource_to_file("/data/goes_input.nc", GOES(satellite="goes16", scan_mode="C"),
+datasource_to_file("goes_input.nc", GOES(satellite="goes16", scan_mode="C"),
                    time=init_time, variable=goes_vars, lead_time=goes_leads, backend="netcdf")
-datasource_to_file("/data/mrms_input.nc", MRMS(),
+datasource_to_file("mrms_input.nc", MRMS(),
                    time=init_time, variable=mrms_vars, lead_time=mrms_leads, backend="netcdf")
-datasource_to_file("/data/gfs_conditioning.nc", GFS_FX(),
+datasource_to_file("gfs_conditioning.nc", GFS_FX(),
                    time=init_time, variable=gfs_vars, lead_time=gfs_leads, backend="netcdf")
 
 # In offline HPC inference:
