@@ -13,10 +13,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 goes_model_name = "6km_10min_natten_pure_obs_zenith_6steps"
 mrms_model_name = "6km_60min_natten_cos_zenith_input_mrms_eoe"
 
-#pkg = StormScopeBase.load_default_package()
+pkg = StormScopeBase.load_default_package()
 # Load the package from local disk
-pkg_path = "/stormscope/stormscope-goes-mrms"
-pkg = Package(pkg_path)
+# pkg_path = "/stormscope/stormscope-goes-mrms"
+# pkg = Package(pkg_path)
 print("✓ Package loaded successfully")
 try:
     print(f"\nLoading GOES model: {goes_model_name}")
