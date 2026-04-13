@@ -49,11 +49,7 @@ print(f"Initial time: {start_time}")
 
 # Build interpolators
 # For a local GOES file, we use its lat/lon grid as the input grid.
-sample_da = goes_local(
-    time=start_time,
-    variable=np.array([variables[0]]),
-    lead_time=in_coords["lead_time"],
-)
+sample_da = goes_local.da.isel(time=0, variable=0)  # Sample data array to get lat/lon coords
 
 input_lat = sample_da.coords["lat"].values
 input_lon = sample_da.coords["lon"].values
