@@ -61,10 +61,9 @@ goes_model.build_conditioning_interpolator(GFS_FX.GFS_LAT, GFS_FX.GFS_LON)
 x, x_coords = fetch_data(
     goes_local,
     time=start_time,
-    variable=variables,
+    variable=np.array(variables),
     lead_time=in_coords["lead_time"],
     device=DEVICE,
-
 )
 # Add batch dimension: expected shape [B, T, L, C, H, W]
 if x.dim() == 5:
