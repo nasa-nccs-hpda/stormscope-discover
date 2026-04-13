@@ -46,6 +46,8 @@ model_mrms = StormScopeMRMS.load_model(
 model_mrms = model_mrms.to(device)
 model_mrms.eval()
 
+# Setup GOES Data Source and Interpolators
+# ----------------------------------------
 start_date = [np.datetime64(datetime(2023, 12, 5, 12, 00, 0))]
 goes_satellite = "goes16"
 scan_mode = "C"
@@ -71,3 +73,34 @@ x, x_coords = fetch_data(
     lead_time=in_coords["lead_time"],
     device=device,
 )
+
+# Setup MRMS Data Source and Interpolators
+# ----------------------------------------
+mrms = MRMS()
+mrms_in_coords = model_mrms.input_coords()
+x_mrms, x_coords_mrms = fetch_data(
+    mrms,
+    time=start_date,
+    variable=np.array(["refc"]),
+    lead_time=mrms_in_coords["lead_time"],
+    device=device,
+)
+
+model_mrms.build_input_interpolator(x_coords_mrms["lat"], x_coords_mrms["lon"])
+model_mrms.build_conditioning_interpolator(goes_lat, goes_lon)
+
+
+# Add Batch Dimension
+# -------------------
+batch_size = 1
+if x.dim() == 5:
+    x = x.unsqueeze(0).repeat(batch_size, 1, 1, 1, 1, 1)
+    x_coords["batch"] = np.arange(batch_size)
+    x_coords.move_to_end("batch", last=False)
+if x_mrms.dim() == 5:
+    x_mrms = x_mrms.unsqueeze(0).repeat(batch_size, 1, 1, 1, 1, 1)
+    x_coords_mrms["batch"] = np.arange(batch_size)
+    x_coords_mrms.move_to_end("batch", last=False)
+
+x = x.to(dtype=torch.float32)
+x_mrms = x_mrms.to(dtype=torch.float32)
