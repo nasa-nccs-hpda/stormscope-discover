@@ -32,7 +32,7 @@ goes_local = DataArrayFile(GOES_INPUT_FILE)
 goes_model = StormScopeGOES.load_model(
     pkg,
     model_name=GOES_MODEL_NAME,
-    conditioning_data_source=gfs_local
+    conditioning_data_source=GFS_FX(),
 ).to(DEVICE)
 goes_model.eval()
 
