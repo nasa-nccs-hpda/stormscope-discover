@@ -45,3 +45,29 @@ model_mrms = StormScopeMRMS.load_model(
 )
 model_mrms = model_mrms.to(device)
 model_mrms.eval()
+
+start_date = [np.datetime64(datetime(2023, 12, 5, 12, 00, 0))]
+goes_satellite = "goes16"
+scan_mode = "C"
+
+variables = model.input_coords()["variable"]
+lat_out = model.latitudes.detach().cpu().numpy()
+lon_out = model.longitudes.detach().cpu().numpy()
+
+goes = GOES(satellite=goes_satellite, scan_mode=scan_mode)
+goes_lat, goes_lon = GOES.grid(satellite=goes_satellite, scan_mode=scan_mode)
+
+# Build interpolators for transforming data to model grid
+model.build_input_interpolator(goes_lat, goes_lon)
+model.build_conditioning_interpolator(GFS_FX.GFS_LAT, GFS_FX.GFS_LON)
+
+in_coords = model.input_coords()
+
+# Fetch GOES data
+x, x_coords = fetch_data(
+    goes,
+    time=start_date,
+    variable=np.array(variables),
+    lead_time=in_coords["lead_time"],
+    device=device,
+)
