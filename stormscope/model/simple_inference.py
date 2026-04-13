@@ -51,8 +51,8 @@ print(f"Initial time: {start_time}")
 # For a local GOES file, we use its lat/lon grid as the input grid.
 sample_da = goes_local.da.isel(time=0, variable=0)  # Sample data array to get lat/lon coords
 
-input_lat = sample_da.coords["lat"].values
-input_lon = sample_da.coords["lon"].values
+input_lat = sample_da.coords["_lat"].values
+input_lon = sample_da.coords["_lon"].values
 
 goes_model.build_input_interpolator(input_lat, input_lon)
 goes_model.build_conditioning_interpolator(GFS_FX.GFS_LAT, GFS_FX.GFS_LON)
