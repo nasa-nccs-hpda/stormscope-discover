@@ -3,6 +3,7 @@
 import numpy as np
 import torch
 from datetime import datetime
+import xarray as xr
 
 from earth2studio.data import DataArrayFile
 from earth2studio.models.px.stormscope import StormScopeBase, StormScopeGOES
@@ -44,61 +45,86 @@ print(f"✓ Model loaded on {DEVICE}")
 in_coords = goes_model.input_coords()
 variables = np.array(in_coords['variable'])
 
-# Picck init time 
 # Get initial time from data
 init_time = goes_local.get_times()[0]
 print(f"Initial time: {init_time}")
 
-# Set up output backend
-output_backend = NetCDF4Backend(OUTPUT_FILE)
+# Build interpolators
+# For a local GOES file, we use its lat/lon grid as the input grid.
+sample_da = goes_local(
+    time=start_time,
+    variable=np.array([variables[0]]),
+    lead_time=in_coords["lead_time"],
+)
+
+input_lat = sample_da.coords["lat"].values
+input_lon = sample_da.coords["lon"].values
+
+model.build_input_interpolator(input_lat, input_lon)
+model.build_conditioning_interpolator(GFS_FX.GFS_LAT, GFS_FX.GFS_LON)
+
+# Fetch local GOES data through Earth2Studio helper so shapes/coords match model workflow
+x, x_coords = fetch_data(
+    goes_local,
+    time=start_time,
+    variable=variables,
+    lead_time=in_coords["lead_time"],
+    device=device,
+
+)
+# Add batch dimension: expected shape [B, T, L, C, H, W]
+if x.dim() == 5:
+    x = x.unsqueeze(0)
+    x_coords["batch"] = np.arange(1)
+    x_coords.move_to_end("batch", last=False)
+
+x = x.to(dtype=torch.float32)
+
+
+print(f"Input tensor shape: {tuple(x.shape)}")
+print(f"Variables: {list(variables)}")
+print(f"Lead times: {x_coords['lead_time']}")
 
 # Run inference
 print(f"\nRunning {NUM_STEPS}-step forecast...")
 
-try:
-    # Simple 2-step forecast
-    predictions = []
-    
-    # Get initial input
-    input_coords = goes_model.input_coords()
-    current_data = goes_local(
-        time=init_time,
-        variable=np.array(input_coords['variable']),
-        lead_time=input_coords['lead_time']
-    )
-    
-    coords = input_coords.copy()
-    
-    for step in range(NUM_STEPS):
-        print(f"  Step {step + 1}/{NUM_STEPS}...")
-        
-        with torch.no_grad():
-            pred = goes_model(x=current_data, coords=coords)
-        
-        predictions.append(pred)
-        
-        # Prepare next input if not last step
-        if step < NUM_STEPS - 1:
-            import xarray as xr
-            next_input_t0 = current_data.isel(lead_time=-1)
-            next_input_t1 = pred.isel(lead_time=0)
-            
-            current_data = xr.concat(
-                [next_input_t0.expand_dims('lead_time'),
-                 next_input_t1.expand_dims('lead_time')],
-                dim='lead_time'
-            )
-    
-    # Save results
-    import xarray as xr
-    all_preds = xr.concat(predictions, dim='lead_time')
-    all_preds.to_netcdf(OUTPUT_FILE)
-    
-    print(f"\n✓ Forecast complete! Saved to {OUTPUT_FILE}")
-    print(f"  Output shape: {all_preds.shape}")
-    print(f"  Variables: {list(all_preds.coords['variable'].values)}")
+# Iterative GOES-only inference loop
+y, y_coords = x, x_coords
+forecast_frames = []
+forecast_coords = []
 
-except Exception as e:
-    print(f"✗ Inference failed: {e}")
-    import traceback
-    traceback.print_exc()
+with torch.no_grad():
+    for step_idx in range(args.n_steps):
+        print(f"Running forecast step {step_idx + 1}/{args.n_steps}")
+
+        # One model step
+        y_pred, y_pred_coords = goes_model(y, y_coords)
+
+        # Save raw prediction from this step
+        forecast_frames.append(y_pred.detach().cpu())
+        forecast_coords.append(y_pred_coords.copy())
+
+        # Advance sliding input window for next step
+        y, y_coords = goes_model.next_input(y_pred, y_pred_coords, y, y_coords)
+
+# Concatenate along lead_time if possible
+# Each y_pred should contain one future lead block produced by the model.
+pred_xr_list = []
+for i, (pred_torch, coords) in enumerate(zip(forecast_frames, forecast_coords)):
+    pred_np = pred_torch.numpy()
+
+    dims = list(coords.keys())
+    pred_da = xr.DataArray(pred_np, dims=dims, coords=coords, name="stormscope_goes")
+    pred_da = pred_da.assign_coords(forecast_step=i + 1).expand_dims("forecast_step")
+    pred_xr_list.append(pred_da)
+
+out_da = xr.concat(pred_xr_list, dim="forecast_step")
+
+# Mask invalid grid cells if available
+if hasattr(model, "valid_mask") and model.valid_mask is not None:
+    valid_mask = model.valid_mask.detach().cpu().numpy()
+    # Broadcast mask over non-spatial dims
+    out_da = out_da.where(valid_mask)
+
+out_da.to_netcdf(OUTPUT_FILE)
+print(f"Saved forecast to: {OUTPUT_FILE}")
