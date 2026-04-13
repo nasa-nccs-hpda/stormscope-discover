@@ -5,10 +5,10 @@ import torch
 from datetime import datetime
 import xarray as xr
 
-from earth2studio.data import DataArrayFile
+from earth2studio.data import DataArrayFile, GFS_FX, fetch_data
 from earth2studio.models.px.stormscope import StormScopeBase, StormScopeGOES
-from earth2studio.models.auto import Package
-from earth2studio.io import NetCDF4Backend
+#from earth2studio.models.auto import Package
+#from earth2studio.io import NetCDF4Backend
 
 # Configuration
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -28,9 +28,6 @@ print("Loading model and data...")
 pkg = StormScopeBase.load_default_package()
 gfs_local = DataArrayFile(GFS_CONDITIONING_FILE)
 goes_local = DataArrayFile(GOES_INPUT_FILE)
-times = goes_local.da.coords["time"].values
-print(f"✓ Data loaded: GOES times {times}")
-exit(0)
 
 goes_model = StormScopeGOES.load_model(
     pkg,
@@ -46,8 +43,9 @@ in_coords = goes_model.input_coords()
 variables = np.array(in_coords['variable'])
 
 # Get initial time from data
-init_time = goes_local.get_times()[0]
-print(f"Initial time: {init_time}")
+times = goes_local.da.coords["time"].values
+start_time = times[0]
+print(f"Initial time: {start_time}")
 
 # Build interpolators
 # For a local GOES file, we use its lat/lon grid as the input grid.
@@ -60,8 +58,8 @@ sample_da = goes_local(
 input_lat = sample_da.coords["lat"].values
 input_lon = sample_da.coords["lon"].values
 
-model.build_input_interpolator(input_lat, input_lon)
-model.build_conditioning_interpolator(GFS_FX.GFS_LAT, GFS_FX.GFS_LON)
+goes_model.build_input_interpolator(input_lat, input_lon)
+goes_model.build_conditioning_interpolator(GFS_FX.GFS_LAT, GFS_FX.GFS_LON)
 
 # Fetch local GOES data through Earth2Studio helper so shapes/coords match model workflow
 x, x_coords = fetch_data(
@@ -69,7 +67,7 @@ x, x_coords = fetch_data(
     time=start_time,
     variable=variables,
     lead_time=in_coords["lead_time"],
-    device=device,
+    device=DEVICE,
 
 )
 # Add batch dimension: expected shape [B, T, L, C, H, W]
