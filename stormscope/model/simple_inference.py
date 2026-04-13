@@ -114,8 +114,8 @@ for i, (pred_torch, coords) in enumerate(zip(forecast_frames, forecast_coords)):
 out_da = xr.concat(pred_xr_list, dim="forecast_step")
 
 # Mask invalid grid cells if available
-if hasattr(model, "valid_mask") and model.valid_mask is not None:
-    valid_mask = model.valid_mask.detach().cpu().numpy()
+if hasattr(goes_model, "valid_mask") and goes_model.valid_mask is not None:
+    valid_mask = goes_model.valid_mask.detach().cpu().numpy()
     # Broadcast mask over non-spatial dims
     out_da = out_da.where(valid_mask)
 
