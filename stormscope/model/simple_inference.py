@@ -35,7 +35,7 @@ goes_model = StormScopeGOES.load_model(
 ).to(DEVICE)
 
 print(f"✓ Model loaded on {DEVICE}")
-exit()
+
 # Get initial time from data
 init_time = goes_local.get_times()[0]
 print(f"Initial time: {init_time}")
