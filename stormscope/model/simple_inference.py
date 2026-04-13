@@ -27,15 +27,24 @@ print("Loading model and data...")
 pkg = StormScopeBase.load_default_package()
 gfs_local = DataArrayFile(GFS_CONDITIONING_FILE)
 goes_local = DataArrayFile(GOES_INPUT_FILE)
+times = goes_local.da.coords["time"].values
+print(f"✓ Data loaded: GOES times {times}")
+exit(0)
 
 goes_model = StormScopeGOES.load_model(
     pkg,
     model_name=GOES_MODEL_NAME,
     conditioning_data_source=gfs_local
 ).to(DEVICE)
+goes_model.eval()
 
 print(f"✓ Model loaded on {DEVICE}")
 
+# Model-required coordinates
+in_coords = goes_model.input_coords()
+variables = np.array(in_coords['variable'])
+
+# Picck init time 
 # Get initial time from data
 init_time = goes_local.get_times()[0]
 print(f"Initial time: {init_time}")
