@@ -87,8 +87,8 @@ forecast_frames = []
 forecast_coords = []
 
 with torch.no_grad():
-    for step_idx in range(args.n_steps):
-        print(f"Running forecast step {step_idx + 1}/{args.n_steps}")
+    for step_idx in range(NUM_STEPS):
+        print(f"Running forecast step {step_idx + 1}/{NUM_STEPS}")
 
         # One model step
         y_pred, y_pred_coords = goes_model(y, y_coords)
