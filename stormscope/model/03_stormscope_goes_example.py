@@ -13,8 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# %%
 """
 StormScope Satellite and Radar Nowcasting
 =========================================
@@ -37,8 +35,6 @@ In this example you will learn:
 #   "cartopy",
 # ]
 # ///
-
-# %%
 # Set Up
 # ------
 # This example shows a minimal StormScope workflow with GOES satellite imagery
@@ -53,14 +49,13 @@ In this example you will learn:
 # conditioning data for the MRMS model in the inference loop as the models are
 # rolled out.
 
-# %%
 import os
 from datetime import datetime
 
 os.makedirs("outputs", exist_ok=True)
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -74,8 +69,7 @@ from earth2studio.models.px.stormscope import (
     StormScopeGOES,
     StormScopeMRMS,
 )
-
-# %%
+exit()
 # We select the proper GOES platform based on the date and build a single
 # initialization timestamp. GOES-19 replaced GOES-16 (both sometimes
 # referred to as GOES-East, covering the same CONUS domain) in April 2025.
