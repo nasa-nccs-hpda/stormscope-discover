@@ -55,7 +55,12 @@ input_lat = sample_da.coords["_lat"].values
 input_lon = sample_da.coords["_lon"].values
 
 goes_model.build_input_interpolator(input_lat, input_lon)
-goes_model.build_conditioning_interpolator(GFS_FX.GFS_LAT, GFS_FX.GFS_LON)
+
+# For conditioning data, we also build an interpolator to the same lat/lon grid.
+sample = gfs_local.da  # underlying xarray
+cond_lat = sample.coords["lat"].values
+cond_lon = sample.coords["lon"].values
+goes_model.build_conditioning_interpolator(cond_lat, cond_lon)
 
 # Fetch local GOES data through Earth2Studio helper so shapes/coords match model workflow
 x, x_coords = fetch_data(
