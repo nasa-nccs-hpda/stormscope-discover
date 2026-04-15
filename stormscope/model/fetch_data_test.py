@@ -1,3 +1,28 @@
+from datetime import datetime, timedelta
+from earth2studio.data import GFS_FX
+
+# one GFS cycle: 2023-12-05 12Z
+init_time = [datetime(2023, 12, 5, 12)]
+
+# exactly these two forecast files: f000 and f001
+lead_times = [timedelta(hours=0), timedelta(hours=1)]
+
+# choose variables you want from the GFS lexicon
+variables = ["t2m"]   # example; can be more than one
+
+src = GFS_FX(source="aws", cache=True, verbose=True)
+
+da = src(
+    time=init_time,
+    lead_time=lead_times,
+    variable=variables,
+)
+
+# save to NetCDF
+da.to_netcdf("gfs_20231205_12z_f000_f001.nc")
+exit()
+
+
 import os
 from datetime import datetime
 import numpy as np
