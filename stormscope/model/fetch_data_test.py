@@ -18,9 +18,21 @@ da = src(
     variable=variables,
 )
 
-# save to NetCDF
-da.to_netcdf("gfs_20231205_12z_f000_f001.nc")
-exit()
+# convert forecast-style output into data-source style output:
+# replace init-time + lead_time with valid time
+valid_da_list = []
+
+for lead in da.lead_time.values:
+    one = da.sel(lead_time=lead, drop=True)
+    vt = init_time + lead
+    one = one.assign_coords(time=np.array([vt], dtype="datetime64[ns]"))
+    valid_da_list.append(one)
+
+da_local = __import__("xarray").concat(valid_da_list, dim="time")
+da_local = da_local.sortby("time")
+
+# now this file has dims like: time, variable, lat, lon
+da_local.to_netcdf("gfs_conditioning_valid_times.nc")
 
 
 import os
