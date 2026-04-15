@@ -9,6 +9,14 @@ from earth2studio.models.px.stormscope import (
 )
 import torch
 
+
+da = GFS_FX().fetch(
+    time=np.datetime64(datetime(2023, 12, 5, 12, 00, 0)),
+    variable=np.array(["z500"]),
+    lead_time=np.array([0,1]),
+)
+print(da)
+exit()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 goes_model_name = "6km_60min_natten_cos_zenith_input_eoe_v2"
 package = StormScopeBase.load_default_package()
