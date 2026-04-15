@@ -103,7 +103,8 @@ with torch.no_grad():
         forecast_coords.append(y_pred_coords.copy())
 
         # Advance sliding input window for next step
-        y, y_coords = goes_model.next_input(y_pred, y_pred_coords, y, y_coords)
+        #y, y_coords = goes_model.next_input(y_pred, y_pred_coords, y, y_coords)
+        y, y_coords = y_pred, y_pred_coords
 
 # Concatenate along lead_time if possible
 # Each y_pred should contain one future lead block produced by the model.
