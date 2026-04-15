@@ -8,7 +8,7 @@ init_time = [datetime(2023, 12, 5, 12)]
 lead_times = [timedelta(hours=0), timedelta(hours=1)]
 
 # choose variables you want from the GFS lexicon
-variables = ["t2m"]   # example; can be more than one
+variables = ["z500"]   # example; can be more than one
 
 src = GFS_FX(source="aws", cache=True, verbose=True)
 
