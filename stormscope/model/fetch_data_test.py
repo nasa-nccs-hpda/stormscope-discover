@@ -21,10 +21,10 @@ da = src(
 # convert forecast-style output into data-source style output:
 # replace init-time + lead_time with valid time
 valid_da_list = []
-
+t0 = init_time[0]
 for lead in da.lead_time.values:
     one = da.sel(lead_time=lead, drop=True)
-    vt = init_time + lead
+    vt = t0 + lead
     one = one.assign_coords(time=np.array([vt], dtype="datetime64[ns]"))
     valid_da_list.append(one)
 
