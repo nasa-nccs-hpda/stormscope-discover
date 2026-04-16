@@ -6,7 +6,11 @@ from datetime import datetime
 import xarray as xr
 
 from earth2studio.data import DataArrayFile, GFS_FX, fetch_data
-from earth2studio.models.px.stormscope import StormScopeBase, StormScopeGOES
+from earth2studio.models.px.stormscope import (
+    StormScopeBase, 
+    StormScopeGOES,
+    StormScopeMRMS,
+)
 #from earth2studio.models.auto import Package
 #from earth2studio.io import NetCDF4Backend
 
@@ -16,9 +20,12 @@ NUM_STEPS = 2
 
 # Paths
 GOES_INPUT_FILE = "goes_input.nc"
-GFS_CONDITIONING_FILE = "gfs_conditioning.nc" #"gfs_20231205_12z_f000_f001.nc" #
-#PKG_PATH = "/stormscope/stormscope-goes-mrms"
 GOES_MODEL_NAME = "6km_60min_natten_cos_zenith_input_eoe_v2"
+
+MRMS_INPUT_FILE = "mrms_input.nc"
+MRMS_MODEL_NAME = "6km_60min_natten_cos_zenith_input_mrms_eoe"
+
+GFS_CONDITIONING_FILE = "gfs_conditioning.nc" #"gfs_20231205_12z_f000_f001.nc" #
 OUTPUT_FILE = "./stormscope_forecast.nc"
 
 print("Loading model and data...")
@@ -28,6 +35,7 @@ print("Loading model and data...")
 pkg = StormScopeBase.load_default_package()
 gfs_local = DataArrayFile(GFS_CONDITIONING_FILE)
 goes_local = DataArrayFile(GOES_INPUT_FILE)
+mrms_local = DataArrayFile(MRMS_INPUT_FILE)
 
 goes_model = StormScopeGOES.load_model(
     pkg,
@@ -36,10 +44,17 @@ goes_model = StormScopeGOES.load_model(
 ).to(DEVICE)
 goes_model.eval()
 
+mrms_model = StormScopeMRMS.load_model(
+    pkg,
+    model_name=MRMS_MODEL_NAME,
+    conditioning_data_source=goes_local,
+).to(DEVICE)
+mrms_model.eval()
 print(f"✓ Model loaded on {DEVICE}")
 
 # Model-required coordinates
 in_coords = goes_model.input_coords()
+mrms_in_coords = mrms_model.input_coords()
 variables = np.array(in_coords['variable'])
 
 # Get initial time from data
@@ -51,10 +66,10 @@ print(f"Initial time: {start_time}")
 # For a local GOES file, we use its lat/lon grid as the input grid.
 sample_da = goes_local.da.isel(time=0, variable=0)  # Sample data array to get lat/lon coords
 
-input_lat = sample_da.coords["_lat"].values
-input_lon = sample_da.coords["_lon"].values
+goes_lat = sample_da.coords["_lat"].values
+goes_lon = sample_da.coords["_lon"].values
 
-goes_model.build_input_interpolator(input_lat, input_lon)
+goes_model.build_input_interpolator(goes_lat, goes_lon)
 
 # For conditioning data, we also build an interpolator to the same lat/lon grid.
 sample = gfs_local.da  # underlying xarray
@@ -70,14 +85,34 @@ x, x_coords = fetch_data(
     lead_time=in_coords["lead_time"],
     device=DEVICE,
 )
+
+# For a local MRMS file
+sample_da = mrms_local.da.isel(time=0, variable=0)  # Sample data array to get lat/lon coords
+mrms_lat = sample_da.coords["lat"].values
+mrms_lon = sample_da.coords["lon"].values
+mrms_model.build_input_interpolator(mrms_lat, mrms_lon)
+mrms_model.build_conditioning_interpolator(cond_lat, cond_lon)
+
+x_mrms, x_coords_mrms = fetch_data(
+    mrms_local,
+    time=[start_time],
+    variable=np.array(["refc"]),
+    lead_time=in_coords["lead_time"],
+    device=DEVICE,
+)
 # Add batch dimension: expected shape [B, T, L, C, H, W]
 if x.dim() == 5:
     x = x.unsqueeze(0)
     x_coords["batch"] = np.arange(1)
     x_coords.move_to_end("batch", last=False)
 
-x = x.to(dtype=torch.float32)
+if x_mrms.dim() == 5:
+    x_mrms = x_mrms.unsqueeze(0)
+    x_coords_mrms["batch"] = np.arange(1)
+    x_coords_mrms.move_to_end("batch", last=False)
 
+x = x.to(dtype=torch.float32)
+x_mrms = x_mrms.to(dtype=torch.float32)
 
 print(f"Input tensor shape: {tuple(x.shape)}")
 print(f"Variables: {list(variables)}")
@@ -88,8 +123,11 @@ print(f"\nRunning {NUM_STEPS}-step forecast...")
 
 # Iterative GOES-only inference loop
 y, y_coords = x, x_coords
+y_mrms, y_coords_mrms = x_mrms, x_coords_mrms
 forecast_frames = []
+forecast_frames_mrms = []
 forecast_coords = []
+forecast_coords_mrms = []
 
 with torch.no_grad():
     for step_idx in range(NUM_STEPS):
@@ -97,14 +135,19 @@ with torch.no_grad():
 
         # One model step
         y_pred, y_pred_coords = goes_model(y, y_coords)
+        y_pred_mrms, y_pred_coords_mrms = mrms_model.call_with_conditioning(
+            y_mrms, y_coords_mrms, conditioning=y, conditioning_coords=y_coords
+        )
 
         # Save raw prediction from this step
         forecast_frames.append(y_pred.detach().cpu())
         forecast_coords.append(y_pred_coords.copy())
+        forecast_frames_mrms.append(y_pred_mrms.detach().cpu())
+        forecast_coords_mrms.append(y_pred_coords_mrms.copy())
 
         # Advance sliding input window for next step
-        #y, y_coords = goes_model.next_input(y_pred, y_pred_coords, y, y_coords)
-        y, y_coords = y_pred, y_pred_coords
+        y, y_coords = goes_model.next_input(y_pred, y_pred_coords, y, y_coords)
+        y_mrms, y_coords_mrms = mrms_model.next_input(y_pred_mrms, y_pred_coords_mrms, y_mrms, y_coords_mrms)
 
 # Concatenate along lead_time if possible
 # Each y_pred should contain one future lead block produced by the model.
