@@ -1,6 +1,7 @@
 """stormscope_simple_inference.py - Using Earth2Studio's inference utilities"""
 
 import numpy as np
+import pandas as pd
 import torch
 from datetime import datetime
 import xarray as xr
@@ -12,50 +13,23 @@ from earth2studio.models.px.stormscope import (
     StormScopeMRMS,
 )
 
-def summarize(name, t):
-    t_cpu = t.detach().cpu()
-
-    finite_mask = torch.isfinite(t_cpu)
-    n_finite = finite_mask.sum().item()
-    total = t_cpu.numel()
-
-    if n_finite > 0:
-        finite_vals = t_cpu[finite_mask]
-        min_val = finite_vals.min().item()
-        max_val = finite_vals.max().item()
-    else:
-        min_val = "NA"
-        max_val = "NA"
-
-    print(
-        f"{name}: shape={tuple(t_cpu.shape)}, "
-        f"finite={n_finite}/{total}, "
-        f"nan={(~finite_mask).sum().item()}, "
-        f"min={min_val}, max={max_val}"
-    )
-
-def show_coords(name, coords):
-    print(f"{name} dims={list(coords.keys())}")
-    for k, v in coords.items():
-        arr = np.asarray(v)
-        preview = arr[: min(3, len(arr))] if arr.ndim == 1 else arr.shape
-        print(f"  {k}: shape={arr.shape}, sample={preview}")
-#from earth2studio.models.auto import Package
-#from earth2studio.io import NetCDF4Backend
-
 # Configuration
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-NUM_STEPS = 2
+NUM_STEPS = 6
 
 # Paths
-GOES_INPUT_FILE = "goes_input.nc"
+init_time = [np.datetime64("2024-09-26T12:00:00")]
+ts_str = pd.to_datetime(init_time[0]).strftime("%Y%m%d_%H%M%S")
+GOES_INPUT_FILE = f"data/goes_input_{ts_str}.nc"
 GOES_MODEL_NAME = "6km_60min_natten_cos_zenith_input_eoe_v2"
 
-MRMS_INPUT_FILE = "mrms_input.nc"
+MRMS_INPUT_FILE = f"data/mrms_input_{ts_str}.nc"
 MRMS_MODEL_NAME = "6km_60min_natten_cos_zenith_input_mrms_eoe"
 
-GFS_CONDITIONING_FILE = "gfs_conditioning.nc" #"gfs_20231205_12z_f000_f001.nc" #
-OUTPUT_FILE = "./stormscope_forecast.nc"
+GFS_CONDITIONING_FILE = f"data_gfs_conditioning_{ts_str}.nc" #"gfs_20231205_12z_f000_f001.nc" #
+GOES_OUTPUT_FILE = f"Helene/stormscope_goes_forecast_{ts_str}.nc"
+MRMS_OUTPUT_FILE = f"Helene/stormscope_mrms_forecast_{ts_str}.nc"
+
 
 print("Loading model and data...")
 
@@ -210,7 +184,7 @@ for i, (pred_torch, coords) in enumerate(zip(forecast_frames, forecast_coords)):
     pred_xr_list.append(pred_da)
 
 out_da = xr.concat(pred_xr_list, dim="lead_time")
-out_da.to_netcdf("./stormscope_goes_forecast.nc")
+out_da.to_netcdf(GOES_OUTPUT_FILE)
 
 # Concatenate MRMS predictions
 pred_xr_list_mrms = []
@@ -227,7 +201,7 @@ for i, (pred_torch, coords) in enumerate(zip(forecast_frames_mrms, forecast_coor
     pred_xr_list_mrms.append(pred_da)
 
 out_da_mrms = xr.concat(pred_xr_list_mrms, dim="lead_time")
-out_da_mrms.to_netcdf("./stormscope_mrms_forecast.nc")
+out_da_mrms.to_netcdf(MRMS_OUTPUT_FILE)
 # # Mask invalid grid cells if available
 # if hasattr(goes_model, "valid_mask") and goes_model.valid_mask is not None:
 #     valid_mask = goes_model.valid_mask.detach().cpu().numpy()
@@ -236,18 +210,18 @@ out_da_mrms.to_netcdf("./stormscope_mrms_forecast.nc")
 #     out_da_mrms = out_da_mrms.where(valid_mask)
 
 # Build dataset with both predicted variables
-ds_out = xr.Dataset(
-    {
-        "stormscope_goes": out_da,
-        "stormscope_mrms": out_da_mrms,
-    }
-)
-print(ds_out)
-# Add lat/lon coordinates as requested
-ds_out["out_lat"] = xr.DataArray(out_lat, dims=("y", "x"), 
-                             coords={"y": ds_out.y, "x": ds_out.x})
-ds_out["out_lon"] = xr.DataArray(out_lon, dims=("y", "x"), 
-                             coords={"y": ds_out.y, "x": ds_out.x})
+# ds_out = xr.Dataset(
+#     {
+#         "stormscope_goes": out_da,
+#         "stormscope_mrms": out_da_mrms,
+#     }
+# )
+# print(ds_out)
+# # Add lat/lon coordinates as requested
+# ds_out["out_lat"] = xr.DataArray(out_lat, dims=("y", "x"), 
+#                              coords={"y": ds_out.y, "x": ds_out.x})
+# ds_out["out_lon"] = xr.DataArray(out_lon, dims=("y", "x"), 
+#                              coords={"y": ds_out.y, "x": ds_out.x})
 
-ds_out.to_netcdf(OUTPUT_FILE)
-print(f"Saved forecast to: {OUTPUT_FILE}")
+# ds_out.to_netcdf(OUTPUT_FILE)
+# print(f"Saved forecast to: {OUTPUT_FILE}")
