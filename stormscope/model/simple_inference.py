@@ -43,6 +43,8 @@ goes_model = StormScopeGOES.load_model(
     conditioning_data_source=gfs_local,
 ).to(DEVICE)
 goes_model.eval()
+print(goes_model.latitudes.detach().cpu().numpy())
+exit()
 
 mrms_model = StormScopeMRMS.load_model(
     pkg,
