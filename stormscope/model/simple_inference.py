@@ -72,9 +72,7 @@ goes_model = StormScopeGOES.load_model(
     conditioning_data_source=gfs_local,
 ).to(DEVICE)
 goes_model.eval()
-valid_mask = goes_model.valid_mask.detach().cpu().numpy()
-print(valid_mask.shape, valid_mask.sum(), valid_mask.sum() / valid_mask.size)
-exit()
+
 mrms_model = StormScopeMRMS.load_model(
     pkg,
     model_name=MRMS_MODEL_NAME,
@@ -250,5 +248,5 @@ ds_out["out_lat"] = xr.DataArray(out_lat, dims=("y", "x"),
 ds_out["out_lon"] = xr.DataArray(out_lon, dims=("y", "x"), 
                              coords={"y": ds_out.y, "x": ds_out.x})
 
-##ds_out.to_netcdf(OUTPUT_FILE)
+ds_out.to_netcdf(OUTPUT_FILE)
 print(f"Saved forecast to: {OUTPUT_FILE}")
