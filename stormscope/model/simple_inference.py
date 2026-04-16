@@ -16,7 +16,7 @@ NUM_STEPS = 2
 
 # Paths
 GOES_INPUT_FILE = "goes_input.nc"
-GFS_CONDITIONING_FILE = "gfs_20231205_12z_f000_f001.nc" #"gfs_conditioning_nolead.nc"
+GFS_CONDITIONING_FILE = "gfs_conditioning.nc" #"gfs_20231205_12z_f000_f001.nc" #
 #PKG_PATH = "/stormscope/stormscope-goes-mrms"
 GOES_MODEL_NAME = "6km_60min_natten_cos_zenith_input_eoe_v2"
 OUTPUT_FILE = "./stormscope_forecast.nc"
