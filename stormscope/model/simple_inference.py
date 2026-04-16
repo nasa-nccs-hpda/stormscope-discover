@@ -43,8 +43,6 @@ goes_model = StormScopeGOES.load_model(
     conditioning_data_source=gfs_local,
 ).to(DEVICE)
 goes_model.eval()
-print(goes_model.latitudes.detach().cpu().numpy())
-exit()
 
 mrms_model = StormScopeMRMS.load_model(
     pkg,
@@ -123,7 +121,7 @@ print(f"Lead times: {x_coords['lead_time']}")
 # Run inference
 print(f"\nRunning {NUM_STEPS}-step forecast...")
 
-# Iterative GOES-only inference loop
+# Iterative GOES & MRMS inference loop
 y, y_coords = x, x_coords
 y_mrms, y_coords_mrms = x_mrms, x_coords_mrms
 forecast_frames = []
@@ -153,6 +151,8 @@ with torch.no_grad():
 
 # Concatenate along lead_time if possible
 # Each y_pred should contain one future lead block produced by the model.
+out_lat = goes_model.latitudes.detach().cpu().numpy()
+out_lon = goes_model.longitudes.detach().cpu().numpy()
 pred_xr_list = []
 for i, (pred_torch, coords) in enumerate(zip(forecast_frames, forecast_coords)):
     pred_np = pred_torch.numpy()
