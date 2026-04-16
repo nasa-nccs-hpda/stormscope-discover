@@ -207,6 +207,8 @@ for i, (pred_torch, coords) in enumerate(zip(forecast_frames, forecast_coords)):
     dims = list(coords.keys())
     print(f"GOES Step {i+1} prediction dims: {dims}")
     print("GOES PRED min/mean/max:", np.nanmin(pred_np), np.nanmean(pred_np), np.nanmax(pred_np))
+    print(pred_np.shape)
+    exit()
     pred_da = xr.DataArray(pred_np, dims=dims, coords=coords, name="stormscope_goes")
     pred_da = pred_da.assign_coords(forecast_step=i + 1).expand_dims("forecast_step")
     pred_xr_list.append(pred_da)
