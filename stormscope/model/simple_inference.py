@@ -242,6 +242,7 @@ ds_out = xr.Dataset(
         "stormscope_mrms": out_da_mrms,
     }
 )
+print(ds_out)
 # Add lat/lon coordinates as requested
 ds_out["out_lat"] = xr.DataArray(out_lat, dims=("y", "x"), 
                              coords={"y": ds_out.y, "x": ds_out.x})
