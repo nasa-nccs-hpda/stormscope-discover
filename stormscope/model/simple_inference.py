@@ -164,11 +164,40 @@ for i, (pred_torch, coords) in enumerate(zip(forecast_frames, forecast_coords)):
 
 out_da = xr.concat(pred_xr_list, dim="forecast_step")
 
+# Concatenate MRMS predictions
+pred_xr_list_mrms = []
+for i, (pred_torch, coords) in enumerate(zip(forecast_frames_mrms, forecast_coords_mrms)):
+    pred_np = pred_torch.numpy()
+    dims = list(coords.keys())
+    pred_da = xr.DataArray(
+        pred_np,
+        dims=dims,
+        coords=coords,
+        name="stormscope_mrms",
+    )
+    pred_da = pred_da.assign_coords(forecast_step=i + 1).expand_dims("forecast_step")
+    pred_xr_list_mrms.append(pred_da)
+
+out_da_mrms = xr.concat(pred_xr_list_mrms, dim="forecast_step")
+
 # Mask invalid grid cells if available
 if hasattr(goes_model, "valid_mask") and goes_model.valid_mask is not None:
     valid_mask = goes_model.valid_mask.detach().cpu().numpy()
     # Broadcast mask over non-spatial dims
     out_da = out_da.where(valid_mask)
+    out_da_mrms = out_da_mrms.where(valid_mask)
 
-out_da.to_netcdf(OUTPUT_FILE)
+# Build dataset with both predicted variables
+ds_out = xr.Dataset(
+    {
+        "stormscope_goes": out_da,
+        "stormscope_mrms": out_da_mrms,
+    }
+)
+# Add 1D lat/lon coordinates as requested
+# out_lat must have dimension y, out_lon must have dimension x
+ds_out["lat"] = xr.DataArray(out_lat, dims=("y",))
+ds_out["lon"] = xr.DataArray(out_lon, dims=("x",))
+
+ds_out.to_netcdf(OUTPUT_FILE)
 print(f"Saved forecast to: {OUTPUT_FILE}")
