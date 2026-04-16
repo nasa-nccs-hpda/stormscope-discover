@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 from earth2studio.data import GFS_FX
-
+import numpy as np
 # one GFS cycle: 2023-12-05 12Z
 init_time = [datetime(2023, 12, 5, 12)]
+nsteps = 12  # number of forecast steps to fetch; each step is 1 hour for GFS-FX
 
 # exactly these two forecast files: f000 and f001
 lead_times = [timedelta(hours=0), timedelta(hours=1)]
@@ -17,14 +18,13 @@ da = src(
     lead_time=lead_times,
     variable=variables,
 )
-
 # convert forecast-style output into data-source style output:
 # replace init-time + lead_time with valid time
 valid_da_list = []
 t0 = init_time[0]
-for lead in da.lead_time.values:
+for i, lead in enumerate(da.lead_time.values):
     one = da.sel(lead_time=lead, drop=True)
-    vt = t0 + lead
+    vt = t0 + lead_times[i]
     one = one.assign_coords(time=np.array([vt], dtype="datetime64[ns]"))
     valid_da_list.append(one)
 

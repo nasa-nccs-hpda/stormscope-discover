@@ -1,11 +1,13 @@
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 import torch
+import xarray as xr
 
 from earth2studio.data import GOES, MRMS, GFS_FX, datasource_to_file, DataArrayFile
 from earth2studio.models.px.stormscope import StormScopeBase, StormScopeGOES, StormScopeMRMS
 from earth2studio.models.auto import Package
 init_time = [np.datetime64("2023-12-05T12:00:00")]
+nsteps = 12 # number of forecast steps to produce (e.g. 12 hours out with 1 hour lead time)
 #device = "cpu"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -62,8 +64,24 @@ datasource_to_file("mrms_input.nc", MRMS(),
                    time=init_time, variable=mrms_vars, lead_time=mrms_leads, backend="netcdf")
 # datasource_to_file("gfs_conditioning.nc", GFS_FX(),
 #                    time=init_time, variable=gfs_vars, lead_time=gfs_leads, backend="netcdf")
-da = GFS_FX()(time=init_time, lead_time=gfs_leads, variable=gfs_vars)
-da.to_netcdf("gfs_conditioning.nc")
+src = GFS_FX(source="aws", cache=True, verbose=True)
+lead_times = [timedelta(hours=int(e)) for e in range(nsteps)]
+da = src(
+    time=init_time,
+    lead_time=lead_times,
+    variable=gfs_vars,
+)
+valid_da_list = []
+t0 = init_time[0]
+for i, lead in enumerate(da.lead_time.values):
+    one = da.sel(lead_time=lead, drop=True)
+    vt = t0 + lead_times[i]
+    one = one.assign_coords(time=np.array([vt], dtype="datetime64[ns]"))
+    valid_da_list.append(one)
+
+da_local = xr.concat(valid_da_list, dim="time")
+da_local = da_local.sortby("time")
+da_local.to_netcdf("gfs_conditioning.nc")
 # In offline HPC inference:
 # goes_local = DataArrayFile("/data/goes_input.nc")
 # mrms_local = DataArrayFile("/data/mrms_input.nc")
