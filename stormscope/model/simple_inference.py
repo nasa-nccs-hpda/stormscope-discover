@@ -26,7 +26,7 @@ GOES_MODEL_NAME = "6km_60min_natten_cos_zenith_input_eoe_v2"
 MRMS_INPUT_FILE = f"data/mrms_input_{ts_str}.nc"
 MRMS_MODEL_NAME = "6km_60min_natten_cos_zenith_input_mrms_eoe"
 
-GFS_CONDITIONING_FILE = f"data_gfs_conditioning_{ts_str}.nc" #"gfs_20231205_12z_f000_f001.nc" #
+GFS_CONDITIONING_FILE = f"data/gfs_conditioning_{ts_str}.nc" #"gfs_20231205_12z_f000_f001.nc" #
 GOES_OUTPUT_FILE = f"Helene/stormscope_goes_forecast_{ts_str}.nc"
 MRMS_OUTPUT_FILE = f"Helene/stormscope_mrms_forecast_{ts_str}.nc"
 
