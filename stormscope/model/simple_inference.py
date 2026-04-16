@@ -163,28 +163,28 @@ with torch.no_grad():
         print(f"Running forecast step {step_idx + 1}/{NUM_STEPS}")
 
         # One model step
-        summarize("y input to GOES", y)
-        show_coords("y_coords", y_coords)
+        # summarize("y input to GOES", y)
+        # show_coords("y_coords", y_coords)
         y_pred, y_pred_coords = goes_model(y, y_coords)
-        summarize("y_pred GOES", y_pred)
-        show_coords("y_pred_coords", y_pred_coords)
+        # summarize("y_pred GOES", y_pred)
+        # show_coords("y_pred_coords", y_pred_coords)
 
         y_pred_mrms, y_pred_coords_mrms = mrms_model.call_with_conditioning(
             y_mrms, y_coords_mrms, 
             conditioning=y_pred, conditioning_coords=y_pred_coords
         )
-        summarize("y_pred MRMS", y_pred_mrms)
-        show_coords("y_pred_coords_mrms", y_pred_coords_mrms)
+        # summarize("y_pred MRMS", y_pred_mrms)
+        # show_coords("y_pred_coords_mrms", y_pred_coords_mrms)
 
         y_next, y_next_coords = goes_model.next_input(y_pred, y_pred_coords, y, y_coords)
-        summarize("y_next GOES", y_next)
-        show_coords("y_next_coords", y_next_coords)
+        # summarize("y_next GOES", y_next)
+        # show_coords("y_next_coords", y_next_coords)
 
         y_mrms_next, y_mrms_next_coords = mrms_model.next_input(
             y_pred_mrms, y_pred_coords_mrms, y_mrms, y_coords_mrms
         )
-        summarize("y_next MRMS", y_mrms_next)
-        show_coords("y_next_coords_mrms", y_mrms_next_coords)
+        # summarize("y_next MRMS", y_mrms_next)
+        # show_coords("y_next_coords_mrms", y_mrms_next_coords)
 
         # Save raw prediction from this step
         forecast_frames.append(y_pred.detach().cpu())
@@ -227,12 +227,12 @@ for i, (pred_torch, coords) in enumerate(zip(forecast_frames_mrms, forecast_coor
 
 out_da_mrms = xr.concat(pred_xr_list_mrms, dim="forecast_step")
 
-# Mask invalid grid cells if available
-if hasattr(goes_model, "valid_mask") and goes_model.valid_mask is not None:
-    valid_mask = goes_model.valid_mask.detach().cpu().numpy()
-    # Broadcast mask over non-spatial dims
-    out_da = out_da.where(valid_mask)
-    out_da_mrms = out_da_mrms.where(valid_mask)
+# # Mask invalid grid cells if available
+# if hasattr(goes_model, "valid_mask") and goes_model.valid_mask is not None:
+#     valid_mask = goes_model.valid_mask.detach().cpu().numpy()
+#     # Broadcast mask over non-spatial dims
+#     out_da = out_da.where(valid_mask)
+#     out_da_mrms = out_da_mrms.where(valid_mask)
 
 # Build dataset with both predicted variables
 ds_out = xr.Dataset(
