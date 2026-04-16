@@ -205,6 +205,8 @@ for i, (pred_torch, coords) in enumerate(zip(forecast_frames, forecast_coords)):
     pred_np = pred_torch.numpy()
 
     dims = list(coords.keys())
+    print(f"GOES Step {i+1} prediction dims: {dims}")
+    print("GOES PRED min/mean/max:", np.nanmin(pred_np), np.nanmean(pred_np), np.nanmax(pred_np))
     pred_da = xr.DataArray(pred_np, dims=dims, coords=coords, name="stormscope_goes")
     pred_da = pred_da.assign_coords(forecast_step=i + 1).expand_dims("forecast_step")
     pred_xr_list.append(pred_da)
@@ -222,6 +224,8 @@ for i, (pred_torch, coords) in enumerate(zip(forecast_frames_mrms, forecast_coor
         coords=coords,
         name="stormscope_mrms",
     )
+    print(f"MRMS Step {i+1} prediction dims: {dims}")
+    print("MRMS PRED min/mean/max:", np.nanmin(pred_np), np.nanmean(pred_np), np.nanmax(pred_np))
     pred_da = pred_da.assign_coords(forecast_step=i + 1).expand_dims("forecast_step")
     pred_xr_list_mrms.append(pred_da)
 
@@ -247,5 +251,5 @@ ds_out["out_lat"] = xr.DataArray(out_lat, dims=("y", "x"),
 ds_out["out_lon"] = xr.DataArray(out_lon, dims=("y", "x"), 
                              coords={"y": ds_out.y, "x": ds_out.x})
 
-ds_out.to_netcdf(OUTPUT_FILE)
+##ds_out.to_netcdf(OUTPUT_FILE)
 print(f"Saved forecast to: {OUTPUT_FILE}")
