@@ -14,15 +14,24 @@ from earth2studio.models.px.stormscope import (
 
 def summarize(name, t):
     t_cpu = t.detach().cpu()
-    finite = torch.isfinite(t_cpu)
-    n_finite = finite.sum().item()
+
+    finite_mask = torch.isfinite(t_cpu)
+    n_finite = finite_mask.sum().item()
     total = t_cpu.numel()
+
+    if n_finite > 0:
+        finite_vals = t_cpu[finite_mask]
+        min_val = finite_vals.min().item()
+        max_val = finite_vals.max().item()
+    else:
+        min_val = "NA"
+        max_val = "NA"
+
     print(
         f"{name}: shape={tuple(t_cpu.shape)}, "
         f"finite={n_finite}/{total}, "
-        f"nan={(~finite).sum().item()}, "
-        f"min={torch.nanmin(t_cpu).item() if n_finite else 'NA'}, "
-        f"max={torch.nanmax(t_cpu).item() if n_finite else 'NA'}"
+        f"nan={(~finite_mask).sum().item()}, "
+        f"min={min_val}, max={max_val}"
     )
 
 def show_coords(name, coords):
