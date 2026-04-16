@@ -11,6 +11,26 @@ from earth2studio.models.px.stormscope import (
     StormScopeGOES,
     StormScopeMRMS,
 )
+
+def summarize(name, t):
+    t_cpu = t.detach().cpu()
+    finite = torch.isfinite(t_cpu)
+    n_finite = finite.sum().item()
+    total = t_cpu.numel()
+    print(
+        f"{name}: shape={tuple(t_cpu.shape)}, "
+        f"finite={n_finite}/{total}, "
+        f"nan={(~finite).sum().item()}, "
+        f"min={torch.nanmin(t_cpu).item() if n_finite else 'NA'}, "
+        f"max={torch.nanmax(t_cpu).item() if n_finite else 'NA'}"
+    )
+
+def show_coords(name, coords):
+    print(f"{name} dims={list(coords.keys())}")
+    for k, v in coords.items():
+        arr = np.asarray(v)
+        preview = arr[: min(3, len(arr))] if arr.ndim == 1 else arr.shape
+        print(f"  {k}: shape={arr.shape}, sample={preview}")
 #from earth2studio.models.auto import Package
 #from earth2studio.io import NetCDF4Backend
 
@@ -97,7 +117,7 @@ x_mrms, x_coords_mrms = fetch_data(
     mrms_local,
     time=[start_time],
     variable=np.array(["refc"]),
-    lead_time=in_coords["lead_time"],
+    lead_time=mrms_in_coords["lead_time"],
     device=DEVICE,
 )
 # Add batch dimension: expected shape [B, T, L, C, H, W]
@@ -134,10 +154,28 @@ with torch.no_grad():
         print(f"Running forecast step {step_idx + 1}/{NUM_STEPS}")
 
         # One model step
+        summarize("y input to GOES", y)
+        show_coords("y_coords", y_coords)
         y_pred, y_pred_coords = goes_model(y, y_coords)
+        summarize("y_pred GOES", y_pred)
+        show_coords("y_pred_coords", y_pred_coords)
+
         y_pred_mrms, y_pred_coords_mrms = mrms_model.call_with_conditioning(
-            y_mrms, y_coords_mrms, conditioning=y, conditioning_coords=y_coords
+            y_mrms, y_coords_mrms, 
+            conditioning=y_pred, conditioning_coords=y_pred_coords
         )
+        summarize("y_pred MRMS", y_pred_mrms)
+        show_coords("y_pred_coords_mrms", y_pred_coords_mrms)
+
+        y_next, y_next_coords = goes_model.next_input(y_pred, y_pred_coords, y, y_coords)
+        summarize("y_next GOES", y_next)
+        show_coords("y_next_coords", y_next_coords)
+
+        y_mrms_next, y_mrms_next_coords = mrms_model.next_input(
+            y_pred_mrms, y_pred_coords_mrms, y_mrms, y_coords_mrms
+        )
+        summarize("y_next MRMS", y_mrms_next)
+        show_coords("y_next_coords_mrms", y_mrms_next_coords)
 
         # Save raw prediction from this step
         forecast_frames.append(y_pred.detach().cpu())
@@ -146,8 +184,8 @@ with torch.no_grad():
         forecast_coords_mrms.append(y_pred_coords_mrms.copy())
 
         # Advance sliding input window for next step
-        y, y_coords = goes_model.next_input(y_pred, y_pred_coords, y, y_coords)
-        y_mrms, y_coords_mrms = mrms_model.next_input(y_pred_mrms, y_pred_coords_mrms, y_mrms, y_coords_mrms)
+        y, y_coords = y_next, y_next_coords
+        y_mrms, y_coords_mrms = y_mrms_next, y_mrms_next_coords
 
 # Concatenate along lead_time if possible
 # Each y_pred should contain one future lead block produced by the model.
