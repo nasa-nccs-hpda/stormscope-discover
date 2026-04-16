@@ -91,7 +91,7 @@ sample_da = mrms_local.da.isel(time=0, variable=0)  # Sample data array to get l
 mrms_lat = sample_da.coords["lat"].values
 mrms_lon = sample_da.coords["lon"].values
 mrms_model.build_input_interpolator(mrms_lat, mrms_lon)
-mrms_model.build_conditioning_interpolator(cond_lat, cond_lon)
+mrms_model.build_conditioning_interpolator(goes_lat, goes_lon)
 
 x_mrms, x_coords_mrms = fetch_data(
     mrms_local,
