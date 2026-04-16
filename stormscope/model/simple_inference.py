@@ -72,7 +72,9 @@ goes_model = StormScopeGOES.load_model(
     conditioning_data_source=gfs_local,
 ).to(DEVICE)
 goes_model.eval()
-
+valid_mask = goes_model.valid_mask.detach().cpu().numpy()
+print(valid_mask.shape, valid_mask.sum(), valid_mask.sum() / valid_mask.size)
+exit()
 mrms_model = StormScopeMRMS.load_model(
     pkg,
     model_name=MRMS_MODEL_NAME,
