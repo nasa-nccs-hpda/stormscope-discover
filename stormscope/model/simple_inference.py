@@ -194,10 +194,11 @@ ds_out = xr.Dataset(
         "stormscope_mrms": out_da_mrms,
     }
 )
-# Add 1D lat/lon coordinates as requested
-# out_lat must have dimension y, out_lon must have dimension x
-ds_out["lat"] = xr.DataArray(out_lat, dims=("y",))
-ds_out["lon"] = xr.DataArray(out_lon, dims=("x",))
+# Add lat/lon coordinates as requested
+ds_out["lat"] = xr.DataArray(out_lat, dims=("y", "x"), 
+                             coords={"y": ds_out.y, "x": ds_out.x})
+ds_out["lon"] = xr.DataArray(out_lon, dims=("y", "x"), 
+                             coords={"y": ds_out.y, "x": ds_out.x})
 
 ds_out.to_netcdf(OUTPUT_FILE)
 print(f"Saved forecast to: {OUTPUT_FILE}")
