@@ -1,24 +1,29 @@
 import os
 import numpy as np
 import earth2studio.run as run
+import pandas as pd
 
-from earth2studio.data import HRRR, GFS_FX
+from earth2studio.data import DataArrayFile, HRRR, GFS_FX
 from earth2studio.models.px import StormCast
 from earth2studio.perturbation import Zero
 from earth2studio.io import NetCDF4Backend
 
 os.makedirs("outputs", exist_ok=True)
 
+date = [np.datetime64("2024-09-26T12:00:00")]
+ts_str = pd.to_datetime(date[0]).strftime("%Y%m%d_%H%M%S")
+GFS_CONDITIONING_FILE = f"data/gfs_conditioning_{ts_str}.nc"
+
 # -----------------------------
 # 1. StormCast conditioning source
 # -----------------------------
 # GFS_FX provides GFS forecast fields, not just initial state.
-conditioning_data_source = GFS_FX(
-    source="aws",      # or "ncep"
-    cache=True,
-    verbose=True,
-)
-
+# conditioning_data_source = GFS_FX(
+#     source="aws",      # or "ncep"
+#     cache=True,
+#     verbose=True,
+# )
+conditioning_data_source = DataArrayFile(GFS_CONDITIONING_FILE)
 # -----------------------------
 # 2. Load StormCast model
 # -----------------------------
@@ -61,14 +66,14 @@ io = NetCDF4Backend(
 # -----------------------------
 # 6. Run ensemble
 # -----------------------------
-date = "2022-11-04T21:00:00"
+
 
 nsteps = 4
-nensemble = 4
+nensemble = 2
 batch_size = 2
 
 io = run.ensemble(
-    [date],
+    date,
     nsteps,
     nensemble,
     model,
