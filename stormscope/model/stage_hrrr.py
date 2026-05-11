@@ -18,6 +18,10 @@ conditioning_data_source = GFS_FX(
     cache=True,
     verbose=True,
 )
+gfs = conditioning_data_source
+gfs_variables = np.array(['u10m' 'v10m' 't2m' 'tcwv' 'sp' 'msl' 'u1000' 'u850' 'u500' 'u250'
+ 'v1000' 'v850' 'v500' 'v250' 'z1000' 'z850' 'z500' 'z250' 't1000' 't850'
+ 't500' 't250' 'q1000' 'q850' 'q500' 'q250'])
 
 package = StormCast.load_default_package()
 model = StormCast.load_model(
@@ -43,6 +47,15 @@ datasource_to_file(
     time=time,
     variable=variables,
     lead_time=np.array([0], dtype="timedelta64[h]"),
+    backend="netcdf",
+)
+
+
+datasource_to_file(
+    file_name="data/stormcast_conditioning_20240926_120000.nc",
+    source=gfs,
+    time=time,
+    variable=gfs_variables,
     backend="netcdf",
 )
 
