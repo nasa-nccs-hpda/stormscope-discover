@@ -13,7 +13,7 @@ os.makedirs("outputs", exist_ok=True)
 
 date = [np.datetime64("2024-09-26T12:00:00")]
 ts_str = pd.to_datetime(date[0]).strftime("%Y%m%d_%H%M%S")
-GFS_CONDITIONING_FILE = f"data/stormcast_conditioning_{ts_str}.nc"
+GFS_CONDITIONING_FILE = f"data/stormcast_conditioning_validtime_{ts_str}.nc"
 HRRR_FILE = f"data/hrrr_{ts_str}.nc"
 
 # -----------------------------
