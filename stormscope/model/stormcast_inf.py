@@ -13,6 +13,7 @@ os.makedirs("outputs", exist_ok=True)
 date = [np.datetime64("2024-09-26T12:00:00")]
 ts_str = pd.to_datetime(date[0]).strftime("%Y%m%d_%H%M%S")
 GFS_CONDITIONING_FILE = f"data/gfs_conditioning_{ts_str}.nc"
+HRRR_FILE = f"data/hrrr_{ts_str}.nc"
 
 # -----------------------------
 # 1. StormCast conditioning source
@@ -38,11 +39,12 @@ model = StormCast.load_model(
 # 3. HRRR initial-condition source
 # -----------------------------
 # Standard StormCast example uses HRRR for mesoscale initialization.
-data = HRRR(
-    source="aws",
-    cache=True,
-    verbose=True,
-)
+# data = HRRR(
+#     source="aws",
+#     cache=True,
+#     verbose=True,
+# )
+data = DataArrayFile(HRRR_FILE)
 
 # -----------------------------
 # 4. Perturbation
