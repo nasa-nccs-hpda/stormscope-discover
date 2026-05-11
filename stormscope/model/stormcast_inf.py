@@ -76,7 +76,6 @@ ds = xr.open_dataset(HRRR_FILE)
 print(ds)
 arr_name = list(ds.data_vars)[0]
 print(ds[arr_name].coords["variable"].values)
-exit()
 # -----------------------------
 # 6. Run ensemble
 # -----------------------------
