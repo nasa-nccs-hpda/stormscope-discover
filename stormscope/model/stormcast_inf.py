@@ -2,6 +2,7 @@ import os
 import numpy as np
 import earth2studio.run as run
 import pandas as pd
+import xarray as xr
 
 from earth2studio.data import DataArrayFile, HRRR, GFS_FX
 from earth2studio.models.px import StormCast
@@ -64,7 +65,17 @@ io = NetCDF4Backend(
         "diskless": False,
     },
 )
+# -----------------------------
+# 5.5 diagnostic :: check input data
+# -----------------------------
+print("Model input variables:")
+print(model.input_coords()["variable"])
 
+print("Local HRRR file:")
+ds = xr.open_dataset(HRRR_FILE)
+print(ds)
+print(ds["fields"].coords["variable"].values)
+exit()
 # -----------------------------
 # 6. Run ensemble
 # -----------------------------
