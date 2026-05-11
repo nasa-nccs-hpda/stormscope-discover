@@ -13,20 +13,41 @@ out_file = f"data/hrrr_{ts_str}.nc"
 # Use the variables your StormCast run will need.
 # Start with the exact same variables requested by the model/workflow.
 # Same conditioning source choice as inference
-conditioning_data_source = GFS_FX(
+gfs_fx = GFS_FX(
     source="aws",
     cache=True,
     verbose=True,
 )
-gfs = conditioning_data_source
+gfs_file = f"data/stromcast_conditioning_{ts_str}.nc"
+
+lead_time = np.array([0,1,2,3,4], dtype="timedelta64[h]")
 gfs_variables = np.array(['u10m' 'v10m' 't2m' 'tcwv' 'sp' 'msl' 'u1000' 'u850' 'u500' 'u250'
  'v1000' 'v850' 'v500' 'v250' 'z1000' 'z850' 'z500' 'z250' 't1000' 't850'
  't500' 't250' 'q1000' 'q850' 'q500' 'q250'])
 
+class GFSFXForFile:
+    def __init__(self, src, lead_time):
+        self.src = src
+        self.lead_time = lead_time
+
+    def __call__(self, time, variable):
+        return self.src(time, self.lead_time, variable)
+
+gfs_file_source = GFSFXForFile(gfs_fx, lead_time)
+datasource_to_file(
+    file_name=gfs_file,
+    source=gfs_file_source,
+    time=time,
+    variable=gfs_variables,
+    backend="netcdf",
+)
+
+print(f"Saved local GFS conditioning file: {out_file}")
+
 package = StormCast.load_default_package()
 model = StormCast.load_model(
     package,
-    conditioning_data_source=conditioning_data_source,
+    conditioning_data_source=gfs_file_source,
 )
 # StormCast required initial-condition variables
 input_coords = model.input_coords()
@@ -47,15 +68,6 @@ datasource_to_file(
     time=time,
     variable=variables,
     lead_time=np.array([0], dtype="timedelta64[h]"),
-    backend="netcdf",
-)
-
-
-datasource_to_file(
-    file_name="data/stormcast_conditioning_20240926_120000.nc",
-    source=gfs,
-    time=time,
-    variable=gfs_variables,
     backend="netcdf",
 )
 
