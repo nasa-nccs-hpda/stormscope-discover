@@ -21,9 +21,14 @@ gfs_fx = GFS_FX(
 gfs_file = f"data/stormcast_conditioning_{ts_str}.nc"
 
 lead_time = np.array([0,1,2,3,4], dtype="timedelta64[h]")
-gfs_variables = np.array(['u10m' 'v10m' 't2m' 'tcwv' 'sp' 'msl' 'u1000' 'u850' 'u500' 'u250'
- 'v1000' 'v850' 'v500' 'v250' 'z1000' 'z850' 'z500' 'z250' 't1000' 't850'
- 't500' 't250' 'q1000' 'q850' 'q500' 'q250'])
+gfs_variables = variables = np.array([
+    "u10m", "v10m", "t2m", "tcwv", "sp", "msl",
+    "u1000", "u850", "u500", "u250",
+    "v1000", "v850", "v500", "v250",
+    "z1000", "z850", "z500", "z250",
+    "t1000", "t850", "t500", "t250",
+    "q1000", "q850", "q500", "q250",
+])
 
 class GFSFXForFile:
     def __init__(self, src, lead_time):
