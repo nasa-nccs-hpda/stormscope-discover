@@ -74,7 +74,8 @@ print(model.input_coords()["variable"])
 print("Local HRRR file:")
 ds = xr.open_dataset(HRRR_FILE)
 print(ds)
-print(ds["fields"].coords["variable"].values)
+arr_name = list(ds.data_vars)[0]
+print(ds[arr_name].coords["variable"].values)
 exit()
 # -----------------------------
 # 6. Run ensemble
