@@ -66,16 +66,28 @@ io = NetCDF4Backend(
     },
 )
 # -----------------------------
-# 5.5 diagnostic :: check input data
+# 5.5 diagnostic :: check input data and conditioning variables
 # -----------------------------
-print("Model input variables:")
+def print_file_vars(path, label):
+    ds = xr.open_dataset(path)
+    arr_name = list(ds.data_vars)[0]
+    file_vars = ds[arr_name].coords["variable"].values
+
+    print(f"\n{label}: {path}")
+    print("array name:", arr_name)
+    print("nvars:", len(file_vars))
+    print(file_vars)
+
+print_file_vars(HRRR_FILE, "HRRR initial file")
+print_file_vars(GFS_CONDITIONING_FILE, "GFS conditioning file")
+
+# Try to reveal what StormCast asks from conditioning source
+print("\nStormCast input variables:")
 print(model.input_coords()["variable"])
 
-print("Local HRRR file:")
-ds = xr.open_dataset(HRRR_FILE)
-print(ds)
-arr_name = list(ds.data_vars)[0]
-print(ds[arr_name].coords["variable"].values)
+if hasattr(model, "conditioning_coords"):
+    print("\nStormCast conditioning variables:")
+    print(model.conditioning_coords()["variable"])
 # -----------------------------
 # 6. Run ensemble
 # -----------------------------
