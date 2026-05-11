@@ -25,10 +25,25 @@ HRRR_FILE = f"data/hrrr_{ts_str}.nc"
 #     cache=True,
 #     verbose=True,
 # )
-conditioning_data_source = DataArrayFile(GFS_CONDITIONING_FILE)
+#conditioning_data_source = DataArrayFile(GFS_CONDITIONING_FILE)
+class DebugGFSFX:
+    def __init__(self):
+        self.src = GFS_FX(source="aws", cache=True, verbose=True)
+
+    def __call__(self, time, variable):
+        print("\n===== StormCast requested GFS_FX =====", flush=True)
+        print("time:", time, flush=True)
+        print("variable:", variable, flush=True)
+
+        # Force stop so you can see the request before downloading
+        raise RuntimeError("Stop here after printing GFS_FX request")
+
+        # return self.src(time, variable)
+
 # -----------------------------
 # 2. Load StormCast model
 # -----------------------------
+conditioning_data_source = DebugGFSFX()
 package = StormCast.load_default_package()
 
 model = StormCast.load_model(
