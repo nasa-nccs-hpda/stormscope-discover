@@ -107,10 +107,10 @@ if hasattr(model, "conditioning_coords"):
 # -----------------------------
 
 
-nsteps = 4
-nensemble = 2
+nsteps = 5
+nensemble = 4
 batch_size = 2
-
+out_vars = ["u10m", "v10m", "t2m", "mslp", "refc"]  # specify which variables to save in output
 io = run.ensemble(
     date,
     nsteps,
@@ -121,7 +121,7 @@ io = run.ensemble(
     perturbation,
     batch_size=batch_size,
     output_coords={
-        "variable": np.array(["t2m", "refc"])
+        "variable": np.array(out_vars)
     },
 )
 
