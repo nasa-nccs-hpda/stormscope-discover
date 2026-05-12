@@ -70,7 +70,7 @@ perturbation = Zero()
 # -----------------------------
 # 5. NetCDF output
 # -----------------------------
-out_nc = "outputs/stormcast_ensemble_gfsfx.nc"
+out_nc = f"outputs/stormcast_ensemble_gfsfx_{ts_str}.nc"
 
 io = NetCDF4Backend(
     out_nc,
